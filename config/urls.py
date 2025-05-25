@@ -14,9 +14,35 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from typing import Any
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include, re_path
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+)
+
+
+schema_view: Any = get_schema_view(
+    openapi.Info(
+        title="Github search API",
+        default_version='v1',
+        description="API Documentation",
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
+    # OpenAPI-схема в JSON/YAML
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Swagger-UI знизу бере URL='schema'
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # наш Search ендпоїнт
 ]
