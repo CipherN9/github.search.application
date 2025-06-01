@@ -17,6 +17,8 @@ services:
              gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
     ports:
       - "8000:8000"
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       - redis
     restart: on-failure
