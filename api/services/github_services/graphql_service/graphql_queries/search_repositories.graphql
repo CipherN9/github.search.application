@@ -2,13 +2,11 @@ query SearchRepositories($text: String!, $first: Int!) {
   search(type: REPOSITORY, query: $text, first: $first) {
     nodes {
       ... on Repository {
-        databaseId
-        name
-        owner {
-          login
-        }
+        id: databaseId
+        title: name
+        owner: owner { login }
+        stars: stargazerCount
         description
-        stargazerCount
         url
       }
     }

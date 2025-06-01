@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from api.enums import SearchType
+from api.utils.serializers import CamelCaseSerializerMixin
 
 
 class SearchParametersSerializer(serializers.Serializer):
@@ -22,7 +23,7 @@ class SearchSerializer(SearchParametersSerializer, SearchBodySerializer):
     pass
 
 
-class UserSerializer(serializers.Serializer):
+class UserSerializer(CamelCaseSerializerMixin, serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     avatar_url = serializers.CharField()

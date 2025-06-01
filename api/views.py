@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Dict, List
 
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework import serializers, status
 from api.enums import SearchType
 from api.schemas import search_extend_schema
-from api.serializers import SearchSerializer,  UserSerializer, RepositorySerializer
+from api.serializers import SearchSerializer, UserSerializer, RepositorySerializer
 
 from api.services.github_services import GraphQLGithubService
 from api.services.service import ServiceLayer
@@ -24,9 +24,10 @@ class SearchAPIView(APIView):
         search_text: str = serializer.validated_data['search_text']
 
         service = ServiceLayer(GraphQLGithubService())
-        response = service.search_by_text(search_text=search_text, search_type=search_type)
+        data: List[Dict[str]] = service.search_by_text(search_text=search_text, search_type=search_type)
+        print(data)
 
-        response_serializer = self.get_response_serializer(search_type=search_type)(data=response, many=True)
+        response_serializer = self.get_response_serializer(search_type=search_type)(data=data, many=True)
         response_serializer.is_valid(raise_exception=True)
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)

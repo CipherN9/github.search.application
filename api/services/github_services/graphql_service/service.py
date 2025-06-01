@@ -17,16 +17,21 @@ class GraphQLGithubService(GithubService):
 
         return query
 
-    def execute_request(self, payload: Dict[str, Any]) -> requests.Response:
+    def execute_request(self, payload: Dict[str, Any]) -> List[Dict[str, str]]:
         headers = {
             "Authorization": f"Bearer {self.GITHUB_TOKEN}",
             "Content-Type": "application/json",
         }
 
-        resp = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
-        resp.raise_for_status()
+        response = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
+        response.raise_for_status()
 
-        return resp
+        result = response.json()
+
+        if "errors" in result:
+            raise Exception(result["errors"])
+
+        return result["data"]["search"]["nodes"]
 
     def get_search_payload(self, search_text: str, graphql_query_name: str) -> Dict[str, Any]:
         payload = {
@@ -38,39 +43,12 @@ class GraphQLGithubService(GithubService):
 
     def get_users(self, search_text: str, first: int = 30) -> List[Dict[str, str]]:
         payload = self.get_search_payload(search_text, "search_users.graphql")
-        data  = self.execute_request(payload).json()
+        items: List[Dict[str, str]] = self.execute_request(payload)
 
-        if "errors" in data:
-            raise Exception(data["errors"])
-
-        result = data["data"]["search"]["nodes"]
-        res = []
-        for item in result:
-            if item:
-                res.append({'id': item["databaseId"],
-                            'title': item["login"],
-                            'location': item["location"],
-                            'avatar_url': item["avatarUrl"]}
-                           )
-        return res
+        return [item for item in items if item]
 
     def get_repositories(self, search_text: str, first: int = 30) -> List[Dict[str, str]]:
         payload = self.get_search_payload(search_text, "search_repositories.graphql")
-        data  = self.execute_request(payload).json()
+        items: List[Dict[str, Any]] = self.execute_request(payload)
 
-        if "errors" in data:
-            raise Exception(data["errors"])
-
-        result = data["data"]["search"]["nodes"]
-        res = []
-        print(result)
-        for item in result:
-            if item:
-                res.append({'id': item["databaseId"],
-                            'title': item['name'],
-                            'owner': item['owner']['login'],
-                            'stars': item['stargazerCount'],
-                            'description': item['description'],
-                            'url': item['url']}
-                           )
-        return res
+        return [{**item, "owner": item["owner"]["login"]} for item in items if item]
