@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from api.enums import SearchType
+from api.utils.enums import SearchType
 from api.utils.serializers import CamelCaseSerializerMixin
 
 

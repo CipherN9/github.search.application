@@ -1,4 +1,4 @@
-from api.enums import SearchType
+from api.utils.enums import SearchType
 from api.services.abс_service import AbstractService
 
 
