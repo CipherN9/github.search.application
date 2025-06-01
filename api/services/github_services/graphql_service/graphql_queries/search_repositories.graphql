@@ -1,0 +1,16 @@
+query SearchRepositories($text: String!, $first: Int!) {
+  search(type: REPOSITORY, query: $text, first: $first) {
+    nodes {
+      ... on Repository {
+        databaseId
+        name
+        owner {
+          login
+        }
+        description
+        stargazerCount
+        url
+      }
+    }
+  }
+}

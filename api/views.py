@@ -1,20 +1,21 @@
+from typing import Type
+
+from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 
+from rest_framework import serializers, status
 from api.enums import SearchType
-from api.serializers import SearchSerializer, SearchParametersSerializer, SearchRequestSerializer, SearchResponseSerializer
+from api.schemas import search_extend_schema
+from api.serializers import SearchSerializer,  UserSerializer, RepositorySerializer
 
-from api.services.github_service import GraphQLGithubService
+from api.services.github_services import GraphQLGithubService
 from api.services.service import ServiceLayer
 
 class SearchAPIView(APIView):
-    @extend_schema(
-        tags=['Search'],
-        parameters=[SearchParametersSerializer],
-        request=SearchRequestSerializer,
-        responses=SearchResponseSerializer(many=True),
-    )
+    parser_classes = [JSONParser]
+
+    @search_extend_schema
     def post(self, request, *args, **kwargs):
         serializer = SearchSerializer(data={**request.query_params.dict(), **request.data})
         serializer.is_valid(raise_exception=True)
@@ -23,8 +24,18 @@ class SearchAPIView(APIView):
         search_text: str = serializer.validated_data['search_text']
 
         service = ServiceLayer(GraphQLGithubService())
-        response = service.search_by_query(query=search_text, search_type=search_type)
+        response = service.search_by_text(search_text=search_text, search_type=search_type)
 
-        out = SearchResponseSerializer(data=response, many=True)
-        out.is_valid(raise_exception=True)
-        return Response(out.data)
+        response_serializer = self.get_response_serializer(search_type=search_type)(data=response, many=True)
+        response_serializer.is_valid(raise_exception=True)
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def get_response_serializer(search_type: SearchType) -> Type[serializers.Serializer]:
+        if search_type == SearchType.USERS:
+            return UserSerializer
+        elif search_type == SearchType.REPOSITORIES:
+            return RepositorySerializer
+        else:
+            raise ValueError('Invalid search type')

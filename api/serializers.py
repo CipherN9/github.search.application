@@ -14,16 +14,26 @@ class SearchParametersSerializer(serializers.Serializer):
         return SearchType(value)
 
 
-class SearchRequestSerializer(serializers.Serializer):
+class SearchBodySerializer(serializers.Serializer):
     search_text = serializers.CharField()
 
 
-class SearchSerializer(SearchParametersSerializer, SearchRequestSerializer):
+class SearchSerializer(SearchParametersSerializer, SearchBodySerializer):
     pass
 
 
-class SearchResponseSerializer(serializers.Serializer):
+class UserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     avatar_url = serializers.CharField()
     location = serializers.CharField(allow_null=True)
+
+
+class RepositorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    owner = serializers.CharField()
+    stars = serializers.CharField()
+    description = serializers.CharField(allow_null=True)
+    url = serializers.CharField()
+
