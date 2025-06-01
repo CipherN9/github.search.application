@@ -3,9 +3,10 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 
 from api.enums import SearchType
-from api.services.github_service import perform_search
 from api.serializers import SearchSerializer, SearchParametersSerializer, SearchRequestSerializer, SearchResponseSerializer
 
+from api.services.github_service import GraphQLGithubService
+from api.services.service import ServiceLayer
 
 class SearchAPIView(APIView):
     @extend_schema(
@@ -21,8 +22,9 @@ class SearchAPIView(APIView):
         search_type: SearchType = serializer.validated_data['search_type']
         search_text: str = serializer.validated_data['search_text']
 
-        profiles = perform_search(search_type, search_text)
+        service = ServiceLayer(GraphQLGithubService())
+        response = service.search_by_query(query=search_text, search_type=search_type)
 
-        out = SearchResponseSerializer(data=profiles, many=True)
+        out = SearchResponseSerializer(data=response, many=True)
         out.is_valid(raise_exception=True)
         return Response(out.data)

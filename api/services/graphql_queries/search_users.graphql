@@ -1,0 +1,13 @@
+query SearchUsers($text: String!, $first: Int!) {
+  search(type: USER, query: $text, first: $first) {
+    nodes {
+      ... on User {
+        databaseId
+        login
+        name
+        avatarUrl
+        location
+      }
+    }
+  }
+}

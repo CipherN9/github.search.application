@@ -1,43 +1,83 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
-
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Dict, List, Any
 import requests
-from rest_framework import status
-from rest_framework.response import Response
 
 
-def perform_search(search_type, text):
-    token = os.getenv("GITHUB_TOKEN")
-    headers = {"Accept": "application/vnd.github.v3+json"}
-    if token:
-        headers["Authorization"] = f"token {token}"
+BASE_PATH = Path(__file__).resolve().parent
 
-    resp = requests.get(
-        f"https://api.github.com/search/{search_type}",
-        params={"q": text},
-        headers=headers,
-        timeout=10
-    )
-    if resp.status_code != 200:
-        return Response(
-            {"detail": "GitHub Search failed", "github_status": resp.status_code},
-            status=status.HTTP_502_BAD_GATEWAY
-        )
-    items = resp.json().get("items", [])
 
-    # 3. для users — паралельні запити у потоках
-    def fetch_profile(user):
-        r = requests.get(f"https://api.github.com/users/{user['login']}",
-                         headers=headers, timeout=10)
-        data = r.json() if r.status_code == 200 else {}
-        return {
-            "id": user.get("id"),
-            "title": user.get("login"),
-            "location": data.get("location"),
-            "avatar_url": data.get("avatar_url")
+class AbstractService(ABC):
+    @abstractmethod
+    def get_users(self, query: str, first: int = 30) -> List[Dict[str, str]]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_repositories(self, query: str, first: int = 30) -> List[Dict[str, str]]:
+        raise NotImplementedError()
+
+class GithubService(AbstractService):
+    GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+    @abstractmethod
+    def execute_request(self, payload: Dict[str, Any]):
+        raise NotImplementedError()
+
+    def get_users(self, query: str, first: int = 30) -> List[Dict[str, str]]:
+        pass
+
+    def get_repositories(self, query: str, first: int = 30) -> List[Dict[str, str]]:
+        pass
+
+class GraphQLGithubService(GithubService):
+    GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+
+    @staticmethod
+    def get_graphql_query(query_path: Path):
+        with query_path.open(encoding="utf-8") as f:
+            query: str = f.read()
+
+        return query
+
+    def execute_request(self, payload: Dict[str, Any]) -> requests.Response:
+        headers = {
+            "Authorization": f"Bearer {self.GITHUB_TOKEN}",
+            "Content-Type": "application/json",
         }
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
-        profiles = list(executor.map(fetch_profile, items[:30]))
+        resp = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
+        resp.raise_for_status()
 
-    return profiles
+        return resp
+
+    def get_users(self, query: str, first: int = 30) -> List[Dict[str, str]]:
+        search_users_query_path = BASE_PATH / "graphql_queries" / "search_users.graphql"
+        payload = {
+            "query": self.get_graphql_query(search_users_query_path),
+            "variables": {"text": query, "first": 30},
+        }
+
+        data  = self.execute_request(payload).json()
+
+        if "errors" in data:
+            raise Exception(data["errors"])
+
+        result = data["data"]["search"]["nodes"]
+        res = []
+        for item in result:
+            if item:
+                res.append({'id': item["databaseId"],
+                            'title': item["login"],
+                            'location': item["location"],
+                            'avatar_url': item["avatarUrl"]}
+                           )
+        return res
+
+    def get_repositories(self, text: str, first: int = 30) -> List[Dict[str, str]]:
+        pass
+
+
+
+
+
