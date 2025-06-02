@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from rest_framework import serializers, status
 from api.utils.enums import SearchType
+from api.utils.mixins import SerializedMixin
 from api.utils.schemas import search_extend_schema
 from api.serializers import SearchSerializer, UserSerializer, RepositorySerializer
 
@@ -27,22 +28,14 @@ def make_cache_key(search_type: str, search_text: str) -> str:
     hashed = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"{CACHE_KEY_PREFIX}{hashed}"
 
-class SearchAPIView(APIView):
+class SearchAPIView(SerializedMixin, APIView):
     parser_classes = [JSONParser]
+    wrapped_methods = ["post"]
 
     @search_extend_schema
-    def post(self, request, *args, **kwargs):
-        serializer = SearchSerializer(data={**request.query_params.dict(), **request.data})
-        serializer.is_valid(raise_exception=True)
-
-        search_type: SearchType = serializer.validated_data['search_type']
-        search_text: str = serializer.validated_data['search_text']
-
-        cache_key = make_cache_key(search_type, search_text)
-
-        cached = cache.get(cache_key)
-        if cached is not None:
-            return Response(cached, status=status.HTTP_200_OK)
+    def post(self, request, query_params, request_body, *args, **kwargs):
+        search_type: SearchType = query_params['search_type']
+        search_text: str = request_body['search_text']
 
         service = ServiceLayer(GraphQLGithubService())
         data: List[Dict[str]] = service.search_by_text(search_text=search_text, search_type=search_type)
@@ -50,8 +43,31 @@ class SearchAPIView(APIView):
         response_serializer = self.get_response_serializer(search_type=search_type)(data=data, many=True)
         response_serializer.is_valid(raise_exception=True)
 
-        cache.set(cache_key, response_serializer.data, timeout=CACHE_EXPIRATION)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+    # @search_extend_schema
+    # def post(self, request, *args, **kwargs):
+    #     serializer = SearchSerializer(data={**request.query_params.dict(), **request.data})
+    #     serializer.is_valid(raise_exception=True)
+    #
+    #     search_type: SearchType = serializer.validated_data['search_type']
+    #     search_text: str = serializer.validated_data['search_text']
+    #
+    #     cache_key = make_cache_key(search_type, search_text)
+    #
+    #     cached = cache.get(cache_key)
+    #     if cached is not None:
+    #         return Response(cached, status=status.HTTP_200_OK)
+    #
+    #     service = ServiceLayer(GraphQLGithubService())
+    #     data: List[Dict[str]] = service.search_by_text(search_text=search_text, search_type=search_type)
+    #
+    #     response_serializer = self.get_response_serializer(search_type=search_type)(data=data, many=True)
+    #     response_serializer.is_valid(raise_exception=True)
+    #
+    #     cache.set(cache_key, response_serializer.data, timeout=CACHE_EXPIRATION)
+    #     return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @staticmethod
     def get_response_serializer(search_type: SearchType) -> Type[serializers.Serializer]:

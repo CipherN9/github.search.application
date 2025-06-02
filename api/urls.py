@@ -8,5 +8,5 @@ from api.views import SearchAPIView, clear_search_endpoint_cache
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('search', SearchAPIView.as_view()),
-    path("clear-cache/", clear_search_endpoint_cache, name="clear-search-cache"),
+    path("clear-cache", clear_search_endpoint_cache, name="clear-search-cache"),
 ]
