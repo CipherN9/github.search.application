@@ -22,6 +22,7 @@ from api.utils.cache_conf import SEARCH_CACHE_KEY
 
 cache: RedisCache
 
+
 class SearchAPIView(APIView, SearchPOSTMixin):
     parser_classes = [JSONParser]
 
@@ -63,7 +64,6 @@ class SearchAPIView(APIView, SearchPOSTMixin):
         response_serializer.is_valid(raise_exception=True)
 
         return response_serializer.data
-
 
 
 @extend_schema(tags=['Search'])
