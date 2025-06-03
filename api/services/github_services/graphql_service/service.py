@@ -4,6 +4,8 @@ from api.services.github_services.abс_service import GithubService
 import requests
 from typing import Dict, Any, List
 
+from api.services.github_services.graphql_service.exceptions import GraphQLGithubServiceException
+
 BASE_PATH = Path(__file__).resolve().parent
 GRAPHQL_QUERIES_PATH = BASE_PATH / "graphql_queries"
 
@@ -23,15 +25,24 @@ class GraphQLGithubService(GithubService):
             "Content-Type": "application/json",
         }
 
-        response = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
-        response.raise_for_status()
+        try:
+            response = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise GraphQLGithubServiceException(f"HTTP error: {e}")
 
-        result = response.json()
+        try:
+            result = response.json()
+        except ValueError as e:
+            raise GraphQLGithubServiceException(f"Invalid JSON response: {e}")
 
         if "errors" in result:
-            raise Exception(result["errors"])
+            raise GraphQLGithubServiceException(result["errors"])
 
-        return result["data"]["search"]["nodes"]
+        try:
+            return result["data"]["search"]["nodes"]
+        except:
+            raise GraphQLGithubServiceException("Unexpected GraphQL structure: missing data.search.nodes")
 
     def get_search_payload(self, search_text: str, graphql_query_name: str) -> Dict[str, Any]:
         payload = {

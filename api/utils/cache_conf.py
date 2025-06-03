@@ -1,0 +1,1 @@
+SEARCH_CACHE_KEY = {'PREFIX': 'search_endpoint', 'EXPIRATION': 60 * 120}

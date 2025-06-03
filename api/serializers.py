@@ -1,3 +1,5 @@
+from typing import Type
+
 from rest_framework import serializers
 
 from api.utils.enums import SearchType
@@ -17,10 +19,6 @@ class SearchParametersSerializer(serializers.Serializer):
 
 class SearchBodySerializer(serializers.Serializer):
     search_text = serializers.CharField()
-
-
-class SearchSerializer(SearchParametersSerializer, SearchBodySerializer):
-    pass
 
 
 class UserSerializer(CamelCaseSerializerMixin, serializers.Serializer):
