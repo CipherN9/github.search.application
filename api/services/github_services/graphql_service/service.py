@@ -1,16 +1,25 @@
+import os
 from pathlib import Path
 
-from api.services.github_services.abс_service import GithubService
+from api.services.abс_service import UsersAbstractService, RepositoriesAbstractService
 import requests
 from typing import Dict, Any, List
 
-from api.services.github_services.graphql_service.exceptions import GraphQLGithubServiceException
+from api.services.github_services.graphql_service.exceptions import GraphQLGithubServiceException, \
+    GithubServiceException
 
 BASE_PATH = Path(__file__).resolve().parent
-GRAPHQL_QUERIES_PATH = BASE_PATH / "graphql_queries"
 
-class GraphQLGithubService(GithubService):
+
+class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
     GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+    GRAPHQL_QUERIES_PATH = BASE_PATH / "graphql_queries"
+
+    def __init__(self, github_token: str = None):
+        self.github_token = github_token or os.getenv("GITHUB_TOKEN")
+
+        if not self.github_token:
+            raise GithubServiceException("GITHUB_TOKEN must be set")
 
     @staticmethod
     def get_graphql_query(query_path: Path):
@@ -21,7 +30,7 @@ class GraphQLGithubService(GithubService):
 
     def execute_request(self, payload: Dict[str, Any]) -> List[Dict[str, str]]:
         headers = {
-            "Authorization": f"Bearer {self.GITHUB_TOKEN}",
+            "Authorization": f"Bearer {self.github_token}",
             "Content-Type": "application/json",
         }
 
@@ -29,7 +38,7 @@ class GraphQLGithubService(GithubService):
             response = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
             response.raise_for_status()
         except requests.RequestException as e:
-            raise GraphQLGithubServiceException(f"HTTP error: {e}")
+            raise GraphQLGithubServiceException(f"GraphQL HTTP error: {e}.")
 
         try:
             result = response.json()
@@ -46,7 +55,7 @@ class GraphQLGithubService(GithubService):
 
     def get_search_payload(self, search_text: str, graphql_query_name: str) -> Dict[str, Any]:
         payload = {
-            "query": self.get_graphql_query(GRAPHQL_QUERIES_PATH / Path(graphql_query_name)),
+            "query": self.get_graphql_query(self.GRAPHQL_QUERIES_PATH / Path(graphql_query_name)),
             "variables": {"text": search_text, "first": 30},
         }
 
