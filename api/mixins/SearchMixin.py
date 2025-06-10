@@ -4,7 +4,7 @@ from typing import Type
 from rest_framework import serializers
 
 from api.serializers import SearchParametersSerializer, UserSerializer, RepositorySerializer, SearchBodySerializer
-from api.utils.cache_conf import SEARCH_CACHE_KEY
+from api.utils.constants import SEARCH_CACHE_KEY
 from api.utils.enums import SearchType
 
 

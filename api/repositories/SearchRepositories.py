@@ -15,7 +15,7 @@ class UsersRepository(AbstractRepository):
         self._service = service
 
     def get(self, search_text: str) -> List[Dict[str, str]]:
-        items: List[Dict[str, str]] = self._service.get_users(search_text)
+        items: List[Dict[str, str]] = self._service.get_users(search_text, first=30)
 
         return items
 
@@ -25,6 +25,6 @@ class RepositoriesRepository(AbstractRepository):
         self._service = service
 
     def get(self, search_text: str) -> List[Dict[str, str]]:
-        items: List[Dict[str, str]] = self._service.get_repositories(search_text)
+        items: List[Dict[str, str]] = self._service.get_repositories(search_text, first=30)
 
         return items

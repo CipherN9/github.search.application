@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -102,6 +102,13 @@ CACHES = {
         }
     }
 }
+if 'test' in sys.argv or 'pytest' in sys.argv[0]:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "test-cache"
+        }
+    }
 
 
 # Password validation
@@ -159,4 +166,3 @@ SPECTACULAR_SETTINGS = {
         'operationsSorter': 'alpha',
     },
 }
-

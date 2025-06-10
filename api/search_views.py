@@ -1,4 +1,3 @@
-import traceback
 from typing import Dict, List
 
 from drf_spectacular.utils import extend_schema
@@ -19,7 +18,7 @@ from api.utils.schemas import search_extend_schema
 from api.services.service import ServiceLayer
 from django.core.cache import cache
 from django_redis.cache import RedisCache
-from api.utils.cache_conf import SEARCH_CACHE_KEY
+from api.utils.constants import SEARCH_CACHE_KEY
 
 cache: RedisCache
 
@@ -36,7 +35,7 @@ class SearchAPIView(APIView, SearchPOSTMixin):
         search_text: str = request_body['search_text']
 
         try:
-            result = self.get_from_cache_or_execute_search(search_type, search_text)
+            data = self.get_from_cache_or_execute_search(search_type, search_text)
         except ExternalServiceError as e:
             return Response(generate_exception(e), status=status.HTTP_502_BAD_GATEWAY)
         except Exception as e:
@@ -44,7 +43,10 @@ class SearchAPIView(APIView, SearchPOSTMixin):
             payload['detail'] = f"Unexpected error: {payload['detail']}"
             return Response(payload, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response(result, status=status.HTTP_200_OK)
+        response_serializer = self._get_response_serializer(search_type=search_type)(data=data, many=True)
+        response_serializer.is_valid(raise_exception=True)
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     def get_from_cache_or_execute_search(self, search_type: SearchType, search_text):
         cache_key = self._make_cache_key(search_type, search_text)
@@ -58,19 +60,17 @@ class SearchAPIView(APIView, SearchPOSTMixin):
 
         return result
 
-    def execute_search(self, search_type: SearchType, search_text: str):
+    @staticmethod
+    def execute_search(search_type: SearchType, search_text: str):
         service = ServiceLayer(search_type)
         data: List[Dict[str]] = service.search_by_text(text=search_text)
 
-        response_serializer = self._get_response_serializer(search_type=search_type)(data=data, many=True)
-        response_serializer.is_valid(raise_exception=True)
-
-        return response_serializer.data
+        return data
 
 
 @extend_schema(tags=['Search'])
-@permission_classes([IsAdminUser])
 @api_view(["POST"])
+@permission_classes([IsAdminUser])
 def clear_search_endpoint_cache(request):
     cache.delete_pattern(f"{SEARCH_CACHE_KEY['PREFIX']}*")
     return Response({"detail": "All keys for this cache were cleared."},

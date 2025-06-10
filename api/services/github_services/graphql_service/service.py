@@ -14,6 +14,8 @@ BASE_PATH = Path(__file__).resolve().parent
 class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
     GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
     GRAPHQL_QUERIES_PATH = BASE_PATH / "graphql_queries"
+    SEARCH_USERS_QUERY_FILE = 'search_users.graphql'
+    SEARCH_REPOSITORIES_QUERY_FILE = 'search_repositories.graphql'
 
     def __init__(self, github_token: str = None):
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
@@ -22,13 +24,13 @@ class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
             raise GithubServiceException("GITHUB_TOKEN must be set")
 
     @staticmethod
-    def get_graphql_query(query_path: Path):
+    def get_graphql_query(query_path: Path) -> str:
         with query_path.open(encoding="utf-8") as f:
             query: str = f.read()
 
         return query
 
-    def execute_request(self, payload: Dict[str, Any]) -> List[Dict[str, str]]:
+    def execute_request(self, payload: Dict[str, Any]) -> Any:
         headers = {
             "Authorization": f"Bearer {self.github_token}",
             "Content-Type": "application/json",
@@ -53,22 +55,22 @@ class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
         except:
             raise GraphQLGithubServiceException("Unexpected GraphQL structure: missing data.search.nodes")
 
-    def get_search_payload(self, search_text: str, graphql_query_name: str) -> Dict[str, Any]:
+    def get_search_payload(self, search_text: str, graphql_query_name: str, **kwargs) -> Dict[str, Any]:
         payload = {
             "query": self.get_graphql_query(self.GRAPHQL_QUERIES_PATH / Path(graphql_query_name)),
-            "variables": {"text": search_text, "first": 30},
+            "variables": {"text": search_text, **kwargs},
         }
 
         return payload
 
-    def get_users(self, search_text: str, first: int = 30) -> List[Dict[str, str]]:
-        payload = self.get_search_payload(search_text, "search_users.graphql")
+    def get_users(self, search_text: str, **kwargs) -> List[Dict[str, str]]:
+        payload = self.get_search_payload(search_text, self.SEARCH_USERS_QUERY_FILE, **kwargs)
         items: List[Dict[str, str]] = self.execute_request(payload)
 
         return [item for item in items if item]
 
-    def get_repositories(self, search_text: str, first: int = 30) -> List[Dict[str, str]]:
-        payload = self.get_search_payload(search_text, "search_repositories.graphql")
+    def get_repositories(self, search_text: str, **kwargs) -> List[Dict[str, str]]:
+        payload = self.get_search_payload(search_text, self.SEARCH_REPOSITORIES_QUERY_FILE, **kwargs)
         items: List[Dict[str, Any]] = self.execute_request(payload)
 
         return [{**item, "owner": item["owner"]["login"]} for item in items if item]

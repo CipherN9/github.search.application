@@ -1,9 +1,5 @@
-from typing import Type
-
 from rest_framework import serializers
-
 from api.utils.enums import SearchType
-from api.utils.serializers import CamelCaseSerializerMixin
 
 
 class SearchParametersSerializer(serializers.Serializer):
@@ -21,10 +17,10 @@ class SearchBodySerializer(serializers.Serializer):
     search_text = serializers.CharField()
 
 
-class UserSerializer(CamelCaseSerializerMixin, serializers.Serializer):
+class UserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
-    avatar_url = serializers.CharField()
+    avatar_url = serializers.URLField()
     location = serializers.CharField(allow_null=True)
 
 
@@ -32,7 +28,7 @@ class RepositorySerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     owner = serializers.CharField()
-    stars = serializers.CharField()
+    stars = serializers.IntegerField()
     description = serializers.CharField(allow_null=True)
-    url = serializers.CharField()
+    url = serializers.URLField()
 
