@@ -7,6 +7,7 @@ from typing import Dict, Any, List
 
 from api.services.github_services.graphql_service.exceptions import GraphQLGithubServiceException, \
     GithubServiceException
+from api.utils.logger import logger
 
 BASE_PATH = Path(__file__).resolve().parent
 
@@ -21,6 +22,7 @@ class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
 
         if not self.github_token:
+            logger.error("GITHUB_TOKEN environment variable is not set")
             raise GithubServiceException("GITHUB_TOKEN must be set")
 
     @staticmethod
@@ -37,6 +39,8 @@ class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
         }
 
         try:
+            logger.debug(f"Executing GraphQL request to {self.GITHUB_GRAPHQL_URL} with payload: {payload}, "
+                         f"headers: {headers}")
             response = requests.post(self.GITHUB_GRAPHQL_URL, json=payload, headers=headers)
             response.raise_for_status()
         except requests.RequestException as e:
@@ -66,11 +70,13 @@ class GraphQLGithubService(UsersAbstractService, RepositoriesAbstractService):
     def get_users(self, search_text: str, **kwargs) -> List[Dict[str, str]]:
         payload = self.get_search_payload(search_text, self.SEARCH_USERS_QUERY_FILE, **kwargs)
         items: List[Dict[str, str]] = self.execute_request(payload)
+        logger.debug(f"Users result from GitHub: {items}")
 
         return [item for item in items if item]
 
     def get_repositories(self, search_text: str, **kwargs) -> List[Dict[str, str]]:
         payload = self.get_search_payload(search_text, self.SEARCH_REPOSITORIES_QUERY_FILE, **kwargs)
         items: List[Dict[str, Any]] = self.execute_request(payload)
+        logger.debug(f"Repositories result from GitHub: {items}")
 
         return [{**item, "owner": item["owner"]["login"]} for item in items if item]

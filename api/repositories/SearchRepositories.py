@@ -9,6 +9,9 @@ class AbstractRepository(ABC):
     def get(self, search_text: str) -> List[Dict[str, str]]:
         raise NotImplementedError
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
+
 
 class UsersRepository(AbstractRepository):
     def __init__(self, service: UsersAbstractService):

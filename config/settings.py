@@ -166,3 +166,48 @@ SPECTACULAR_SETTINGS = {
         'operationsSorter': 'alpha',
     },
 }
+
+loglevel = os.environ.get("LOG_LEVEL", "INFO")
+levels = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+extra_info = os.environ.get("EXTRA_LOGGING_INFO", "false").lower() == "true"
+format_line = "[%(levelname)s -> %(filename)s -> %(funcName)s -> line %(lineno)s]"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    "formatters": {
+        "baseFormatter": {
+            "format": f'%(asctime)s ==> {format_line if extra_info else "[%(levelname)s]"} %(message)s (%(name)s)',
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "fileFormatter": {
+            "format": f'%(asctime)s ==> {format_line} %(message)s',
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        }
+    },
+    'handlers': {
+        "consoleHandler": {
+            "class": "logging.StreamHandler",
+            "level": loglevel if loglevel in levels else "INFO",
+            "formatter": "baseFormatter",
+            "stream": "ext://sys.stdout",
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/django.log',
+            'formatter': 'baseFormatter',
+            "level": "DEBUG",
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['consoleHandler', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'main': {
+            'handlers': ['consoleHandler', 'file'],
+            'level': 'DEBUG',
+        },
+    },
+}

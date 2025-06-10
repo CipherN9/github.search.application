@@ -10,7 +10,6 @@ from api.utils.enums import SearchType
 from django.core.cache import cache
 
 
-
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -48,7 +47,7 @@ def test_external_service_returns_502(api_client, service_layer_class):
     url = reverse('search-endpoint') + f'?search_type={SearchType.USERS.value}'
     payload = {'search_text': 'string'}
     service_layer = service_layer_class.return_value
-    exception_detail = 'GitHub down'
+    exception_detail = 'GitHub is down'
     service_layer.search_by_text.side_effect = ExternalServiceError(exception_detail)
 
     response = api_client.post(url, data=payload, format='json')
@@ -56,6 +55,7 @@ def test_external_service_returns_502(api_client, service_layer_class):
     result = response.json()
     assert exception_detail in result['detail']
     assert 'ExternalServiceError' in result['exception']
+
 
 def test_external_service_returns_500(api_client, service_layer_class):
     url = reverse('search-endpoint') + f'?search_type={SearchType.USERS.value}'
@@ -69,6 +69,7 @@ def test_external_service_returns_500(api_client, service_layer_class):
     result = response.json()
     assert exception_detail in result['detail']
     assert 'ValueError' in result['exception']
+
 
 def test_clear_endpoint_cache(api_client, django_user_model):
     cache_key = f"{SEARCH_CACHE_KEY['PREFIX']}_hashed_data"
@@ -94,6 +95,3 @@ def test_clear_endpoint_cache(api_client, django_user_model):
 
     assert response.status_code == status.HTTP_200_OK
     assert cache.get(key=cache_key) is None
-
-
-
