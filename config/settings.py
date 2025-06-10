@@ -194,7 +194,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'logs/django.log',
+            'filename': 'logs/django-test.log' if 'test' in sys.argv or 'pytest' in sys.argv[0] else 'logs/django.log',
             'formatter': 'baseFormatter',
             "level": "DEBUG",
         },
