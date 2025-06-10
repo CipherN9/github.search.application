@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List
 
-from api.services.abс_service import UsersAbstractService, RepositoriesAbstractService
+from api.services.abс_service import RepositoriesAbstractService, UsersAbstractService
 
 
 class AbstractRepository(ABC):
@@ -28,6 +28,8 @@ class RepositoriesRepository(AbstractRepository):
         self._service = service
 
     def get(self, search_text: str) -> List[Dict[str, str]]:
-        items: List[Dict[str, str]] = self._service.get_repositories(search_text, first=30)
+        items: List[Dict[str, str]] = self._service.get_repositories(
+            search_text, first=30
+        )
 
         return items

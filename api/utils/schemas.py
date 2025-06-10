@@ -1,9 +1,19 @@
-from drf_spectacular.utils import extend_schema, OpenApiResponse, PolymorphicProxySerializer, OpenApiExample
-from api.serializers import SearchParametersSerializer, SearchBodySerializer, UserSerializer, \
-    RepositorySerializer
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiResponse,
+    PolymorphicProxySerializer,
+    extend_schema,
+)
+
+from api.serializers import (
+    RepositorySerializer,
+    SearchBodySerializer,
+    SearchParametersSerializer,
+    UserSerializer,
+)
 
 search_extend_schema = extend_schema(
-    tags=['Search'],
+    tags=["Search"],
     parameters=[SearchParametersSerializer],
     request=SearchBodySerializer,
     responses={
@@ -26,7 +36,7 @@ search_extend_schema = extend_schema(
                             "id": 0,
                             "title": "string",
                             "avatar_url": "string",
-                            "location": "string"
+                            "location": "string",
                         },
                     ],
                 ),
@@ -39,11 +49,11 @@ search_extend_schema = extend_schema(
                             "owner": "string",
                             "stars": "string",
                             "description": "string",
-                            "url": "string"
+                            "url": "string",
                         }
                     ],
-                )
-            ]
+                ),
+            ],
         ),
     },
 )

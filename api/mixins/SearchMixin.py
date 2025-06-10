@@ -3,10 +3,15 @@ from typing import Type
 
 from rest_framework import serializers
 
-from api.serializers import SearchParametersSerializer, UserSerializer, RepositorySerializer, SearchBodySerializer
-from api.utils.logger import logger
+from api.serializers import (
+    RepositorySerializer,
+    SearchBodySerializer,
+    SearchParametersSerializer,
+    UserSerializer,
+)
 from api.utils.constants import SEARCH_CACHE_KEY
 from api.utils.enums import SearchType
+from api.utils.logger import logger
 
 
 class SearchPOSTMixin:
@@ -33,17 +38,21 @@ class SearchPOSTMixin:
         short_representation = normalized_search_text[:8].replace(" ", "_")
         hashed = hashlib.sha256(raw.encode("utf-8")).hexdigest()
         cache_key = f"{SEARCH_CACHE_KEY['PREFIX']}:{short_representation}:{hashed}"
-        logger.debug(f'Calculated cache key: {cache_key}')
+        logger.debug(f"Calculated cache key: {cache_key}")
         return cache_key
 
     @staticmethod
-    def _get_response_serializer(search_type: SearchType) -> Type[serializers.Serializer]:
+    def _get_response_serializer(
+        search_type: SearchType,
+    ) -> Type[serializers.Serializer]:
         if search_type == SearchType.USERS:
             serializer = UserSerializer
         elif search_type == SearchType.REPOSITORIES:
             serializer = RepositorySerializer
         else:
-            raise ValueError('Invalid search type')
+            raise ValueError("Invalid search type")
 
-        logger.debug(f"Response serializer for given search_type:{search_type} is {serializer}")
+        logger.debug(
+            f"Response serializer for given search_type:{search_type} is {serializer}"
+        )
         return serializer

@@ -1,11 +1,12 @@
 from rest_framework import serializers
+
 from api.utils.enums import SearchType
 
 
 class SearchParametersSerializer(serializers.Serializer):
     search_type = serializers.ChoiceField(
         choices=SearchType.choices,
-        help_text='Search type',
+        help_text="Search type",
     )
 
     @staticmethod
@@ -31,4 +32,3 @@ class RepositorySerializer(serializers.Serializer):
     stars = serializers.IntegerField()
     description = serializers.CharField(allow_null=True)
     url = serializers.URLField()
-

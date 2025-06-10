@@ -1,11 +1,19 @@
-from api.repositories.SearchRepositories import AbstractRepository, UsersRepository, RepositoriesRepository
+from api.repositories.SearchRepositories import (
+    AbstractRepository,
+    RepositoriesRepository,
+    UsersRepository,
+)
 from api.services.github_services import GraphQLGithubService
 from api.utils.enums import SearchType
 from api.utils.logger import logger
 
 
-def repository_factory(search_type: SearchType, implementation="graphQL") -> AbstractRepository:
-    logger.info(f"Using {implementation} GitHub implementation for getting search results")
+def repository_factory(
+    search_type: SearchType, implementation="graphQL"
+) -> AbstractRepository:
+    logger.info(
+        f"Using {implementation} GitHub implementation for getting search results"
+    )
     if implementation == "graphQL":
         service = GraphQLGithubService()
     else:

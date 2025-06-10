@@ -1,5 +1,4 @@
-from api.repositories.SearchRepositories import  AbstractRepository
-
+from api.repositories.SearchRepositories import AbstractRepository
 from api.utils.enums import SearchType
 from api.utils.factories import repository_factory
 from api.utils.logger import logger
