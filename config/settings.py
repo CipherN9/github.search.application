@@ -172,6 +172,8 @@ levels = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 extra_info = os.environ.get("EXTRA_LOGGING_INFO", "false").lower() == "true"
 format_line = "[%(levelname)s -> %(filename)s -> %(funcName)s -> line %(lineno)s]"
 
+os.umask(0o000)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -194,7 +196,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'logs/django-test.log' if 'test' in sys.argv or 'pytest' in sys.argv[0] else 'logs/django.log',
+            'filename': 'logs/django.log',
             'formatter': 'baseFormatter',
             "level": "DEBUG",
         },
